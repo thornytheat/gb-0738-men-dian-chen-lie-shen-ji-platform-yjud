@@ -13,6 +13,7 @@ from app.modules.intake.handler import router as intake
 from app.modules.penalties.handler import router as penalties
 from app.modules.photos.handler import router as photos
 from app.modules.plans.handler import router as plans
+from app.modules.revisions.handler import router as revisions
 from app.modules.settlement.handler import router as settlement
 from app.store import Store
 from app.web import router as web
@@ -28,7 +29,7 @@ def create_app(settings=None):
     app.state.settings = settings or Settings()
     app.state.store = Store(app.state.settings.database)
     app.mount('/assets', StaticFiles(directory=ROOT / 'app' / 'static'), name='assets')
-    for router in (web, intake, plans, photos, coverage, penalties, settlement, appeals):
+    for router in (web, intake, plans, photos, coverage, penalties, settlement, appeals, revisions):
         app.include_router(router)
 
     @app.exception_handler(AuditError)

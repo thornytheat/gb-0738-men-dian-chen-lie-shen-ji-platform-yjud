@@ -1,10 +1,12 @@
 export const outcomes = ['COMPLIANT', 'VIOLATION', 'PENDING', 'ISOLATED'];
 export const names = {COMPLIANT: '合规', VIOLATION: '违规', PENDING: '待证', ISOLATED: '隔离', BALANCED: '已勾稽',
   OPEN: '已受理', UPHELD: '维持原罚', WAIVED: '全额免除', REDUCED: '部分减免', NONE: '未发起',
+  APPLIED: '已生效', FAILED: '未生效', REVERTED: '已恢复',
   RECEIVED: '已收件', EMPTY_FILE: '空档', BLANK_FILE: '空行档', HEADER_ONLY: '仅表头'};
 const dictionary = JSON.parse(document.getElementById('reason-map').textContent);
 export const reason = code => code ? dictionary[code] || code : '—';
 export const money = cents => (cents / 100).toFixed(2);
+export const signed = cents => `${cents > 0 ? '+' : cents < 0 ? '−' : ''}${money(Math.abs(cents))}`;
 
 export function element(type, value, className) {
   const node = document.createElement(type);
@@ -87,10 +89,15 @@ export function cases(root, rows) {
   root.replaceChildren(...(entries.length ? entries : [element('p', '本批暂无抽中柜位。', 'empty')]));
 }
 
-export function accounts(root, appeal) {
-  const content = [['原罚额', appeal.original_cents], ['异议减免', appeal.reduction_cents], ['结算净罚额', appeal.net_cents]];
-  root.replaceChildren(...content.map(([label, cents], index) => {
-    const line = element('div', null, index === 2 ? 'money-row is-net' : 'money-row');
+export function accounts(root, snapshot) {
+  const ledger = snapshot.revisions.ledger;
+  const content = [['原批次罚额', ledger.original_cents]];
+  if (snapshot.revisions.count) {
+    content.push(['补交修订增减', ledger.revision_delta_cents], ['修订后罚额', ledger.revised_original_cents]);
+  }
+  content.push(['异议减免', ledger.reduction_cents], ['结算净罚额', ledger.net_cents]);
+  root.replaceChildren(...content.map(([label, cents], index, rows) => {
+    const line = element('div', null, index === rows.length - 1 ? 'money-row is-net' : 'money-row');
     line.append(element('span', label), element('strong', money(cents), 'num'));
     return line;
   }));

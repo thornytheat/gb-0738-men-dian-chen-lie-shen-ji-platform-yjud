@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Path, Query, Request
 
 from app.config import Options
-from app.modules.appeals.service import with_appeals
+from app.modules.revisions.service import with_ledger
 from app.modules.settlement.service import run_audit
 from app.pipeline import Audit
 
@@ -19,9 +19,9 @@ def preview(request: Request, options: Annotated[Options, Query()]):
 @router.post('/runs')
 def run(request: Request, options: Options):
     snapshot, reused = run_audit(request.app.state.settings, request.app.state.store, options)
-    return {'reused': reused, **with_appeals(snapshot)}
+    return {'reused': reused, **with_ledger(snapshot)}
 
 
 @router.get('/runs/{run_id}')
 def read_run(request: Request, run_id: RunId):
-    return with_appeals(request.app.state.store.get(run_id))
+    return with_ledger(request.app.state.store.get(run_id))

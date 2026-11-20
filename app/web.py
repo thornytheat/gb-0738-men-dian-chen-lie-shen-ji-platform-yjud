@@ -8,7 +8,7 @@ from app.reasons import REASONS
 router = APIRouter()
 templates = Jinja2Templates(directory=ROOT / 'app' / 'templates')
 SECTIONS = {'intake': '巡店收件', 'plans': '货架版本', 'photos': '照片证据', 'coverage': '抽样覆盖',
-            'penalties': '罚则裁决', 'settlement': '结算勾稽', 'appeals': '异议复核'}
+            'penalties': '罚则裁决', 'settlement': '结算勾稽', 'appeals': '异议复核', 'revisions': '补交修订'}
 
 
 @router.get('/', response_class=HTMLResponse, include_in_schema=False)

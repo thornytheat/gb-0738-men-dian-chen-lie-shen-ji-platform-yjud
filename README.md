@@ -14,6 +14,8 @@ docker compose up --build
 
 可在「异议复核」选 `002:A03`，提交发起事件，再录入复核决定。部分减免 6000 分后，原罚额仍为 295 元、净罚额为 235 元。工具条可下载一份 JSON 证据。
 
+门店补交漏拍照片时，在「补交修订」选择待证柜位，上传照片与清点行后保存。修订只重判所选柜位，其余已核柜位结论不变；面板给出结论变动柜位、原批次到净罚额的勾稽桥（原罚额＋修订增减－异议减免），并可下载修订证据包给财务。同一补交重放不重复计罚；未通过校验的修订记为「未生效」且不改动批次，已生效修订可一键恢复原批次。
+
 ```bash
 docker compose exec -T app pytest -q
 ```
@@ -30,7 +32,7 @@ uvicorn app.main:app --port 18427
 
 Compose 使用 `audit-data` 命名卷；本地数据库默认为 `data/audits.sqlite3`。可通过 `SHELF_DB_PATH` 指定新数据库。
 
-## 七个业务入口
+## 八个业务入口
 
 | 模块 | 入口 | 动作 |
 |---|---|---|
@@ -41,7 +43,8 @@ Compose 使用 `audit-data` 命名卷；本地数据库默认为 `data/audits.sq
 | 罚则裁决 | `GET /api/penalties` | 区分缺图、缺品及无法裁决，择一执行罚则 |
 | 结算勾稽 | `GET /api/settlement`、`POST /api/settlement/runs` | 对账预览或生成可复用的结算批次 |
 | 异议复核 | `GET /api/appeals/{run_id}`、`POST /api/appeals/{run_id}/events` | 查看并追加复核事件，核算净额 |
+| 补交修订 | `GET/POST /api/revisions/{run_id}`、`POST /api/revisions/{run_id}/{n}/revert` | 补交待证柜位图证并重判该柜、回滚已生效修订 |
 
-预检接口接受 `dataset=field` 或 `dataset=reference`，以及可选 `sample_size`。运行提交同名 JSON 字段。使用 `GET /api/settlement/runs/{run_id}` 读取批次，使用 `GET /api/appeals/{run_id}/export` 下载证据。接口目录位于 `/docs`。
+预检接口接受 `dataset=field` 或 `dataset=reference`，以及可选 `sample_size`。运行提交同名 JSON 字段。使用 `GET /api/settlement/runs/{run_id}` 读取批次，使用 `GET /api/appeals/{run_id}/export` 下载证据，`GET /api/revisions/{run_id}/export` 下载修订证据包。接口目录位于 `/docs`。
 
 [字段与规则](docs/DATA-DICTIONARY.md) · [测试证据](docs/DEPTH.md)

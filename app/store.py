@@ -20,6 +20,19 @@ DDL = (
         UNIQUE (run_id, shelf_key, version),
         UNIQUE (run_id, request_id)
     )''',
+    '''CREATE TABLE IF NOT EXISTS revisions (
+        seq INTEGER PRIMARY KEY,
+        run_id TEXT NOT NULL REFERENCES runs(run_id),
+        revision INTEGER NOT NULL CHECK (revision > 0),
+        request_id TEXT NOT NULL,
+        status TEXT NOT NULL CHECK (status IN ('APPLIED', 'FAILED', 'REVERTED')),
+        payload TEXT NOT NULL,
+        result TEXT NOT NULL,
+        revert TEXT,
+        created_at TEXT NOT NULL,
+        UNIQUE (run_id, revision),
+        UNIQUE (run_id, request_id)
+    )''',
 )
 
 
@@ -53,11 +66,25 @@ class Store:
                 raise AuditError('RUN_NOT_FOUND', '未找到该巡检批次', 404)
             return None
         events = connection.execute('SELECT event FROM appeal_events WHERE run_id = ? ORDER BY seq', (run_id,))
-        return {**json.loads(found['snapshot']), 'events': [json.loads(event['event']) for event in events]}
+        revisions = connection.execute('''SELECT status, result, revert FROM revisions
+            WHERE run_id = ? ORDER BY revision''', (run_id,))
+        return {**json.loads(found['snapshot']),
+                'events': [json.loads(event['event']) for event in events],
+                'revisions': [{**json.loads(row['result']), 'status': row['status'],
+                               'revert': json.loads(row['revert']) if row['revert'] else None}
+                              for row in revisions]}
 
     def get(self, run_id, required=True):
         with self.connection() as connection:
             return self.read(connection, run_id, required)
+
+    def revision_payload(self, run_id, number):
+        with self.connection() as connection:
+            found = connection.execute('SELECT payload FROM revisions WHERE run_id = ? AND revision = ?',
+                                       (run_id, number)).fetchone()
+            if found is None:
+                raise AuditError('REVISION_NOT_FOUND', '未找到该补交修订', 404)
+            return json.loads(found['payload'])
 
     def save(self, snapshot):
         run_id = snapshot['manifest']['run_id']
@@ -81,3 +108,46 @@ class Store:
                 (run_id, shelf_key, version, request_id, payload, event) VALUES (?, ?, ?, ?, ?, ?)''',
                 (run_id, event['key'], event['version'], payload['request_id'], raw, canonical(event)))
             return event, False
+
+    def append_revision(self, run_id, payload, build):
+        """追加一条补交修订；相同 request_id 与内容重放时取回已存记录，不重复计罚。"""
+        with self.connection(write=True) as connection:
+            snapshot = self.read(connection, run_id)
+            raw = canonical(payload)
+            old = connection.execute('SELECT payload, status, result, revert FROM revisions WHERE run_id = ? AND request_id = ?',
+                                     (run_id, payload['request_id'])).fetchone()
+            if old:
+                if old['payload'] != raw:
+                    raise AuditError('REQUEST_CONFLICT', '提交编号已用于其他内容', 409)
+                record = json.loads(old['result'])
+                return {**record, 'status': old['status'],
+                        'revert': json.loads(old['revert']) if old['revert'] else None}, True
+            number = len(snapshot['revisions']) + 1
+            status, result = build(snapshot, payload, number)
+            connection.execute('''INSERT INTO revisions
+                (run_id, revision, request_id, status, payload, result, revert, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, NULL, ?)''',
+                (run_id, number, payload['request_id'], status, raw, canonical(result), result['created_at']))
+            return {**result, 'status': status, 'revert': None}, False
+
+    def revert_revision(self, run_id, number, payload, build):
+        """回滚一条已生效修订，恢复原批次结论；相同 request_id 重放取回已存记录。"""
+        with self.connection(write=True) as connection:
+            snapshot = self.read(connection, run_id)
+            found = connection.execute('SELECT status, result, revert FROM revisions WHERE run_id = ? AND revision = ?',
+                                       (run_id, number)).fetchone()
+            if found is None:
+                raise AuditError('REVISION_NOT_FOUND', '未找到该补交修订', 404)
+            if found['status'] == 'REVERTED':
+                stored = json.loads(found['revert'])
+                if stored['request_id'] != payload['request_id']:
+                    raise AuditError('REQUEST_CONFLICT', '提交编号已用于其他内容', 409)
+                if canonical({key: stored[key] for key in ('request_id', 'actor', 'note')}) != canonical(payload):
+                    raise AuditError('REQUEST_CONFLICT', '提交编号已用于其他内容', 409)
+                return {**json.loads(found['result']), 'status': 'REVERTED', 'revert': stored}, True
+            if found['status'] != 'APPLIED':
+                raise AuditError('REVISION_NOT_APPLIED', '只有已生效的修订可以恢复', 409, found['status'])
+            revert = build(snapshot, number, payload)
+            connection.execute('UPDATE revisions SET status = ?, revert = ? WHERE run_id = ? AND revision = ?',
+                               ('REVERTED', canonical(revert), run_id, number))
+            return {**json.loads(found['result']), 'status': 'REVERTED', 'revert': revert}, False

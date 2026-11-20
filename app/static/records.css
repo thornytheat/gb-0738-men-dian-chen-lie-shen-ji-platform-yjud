@@ -56,5 +56,9 @@ input, select { border: 1px solid var(--line-2); border-radius: 4px; background:
 .appeal-form label { font-size: 11px; display: grid; gap: 3px; max-width: 100%; }
 .appeal-form input, .appeal-form select { width: min(100%, 151px); }
 .appeal-form .appeal-note input { width: min(100%, 230px); }
-#appeal-feedback { flex-basis: 100%; color: var(--ok); font-size: 12px; }
-#appeal-feedback.error { color: var(--bad); }
+.appeal-form label.check { display: flex; align-items: center; gap: 6px; padding-bottom: 6px; }
+.appeal-form label.check input { width: auto; }
+.appeal-form input[type="file"] { width: min(100%, 190px); }
+.revision-export { margin: 12px var(--pad) 0; align-self: start; }
+#appeal-feedback, #revision-feedback, #revert-feedback { flex-basis: 100%; color: var(--ok); font-size: 12px; }
+#appeal-feedback.error, #revision-feedback.error, #revert-feedback.error { color: var(--bad); }

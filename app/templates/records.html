@@ -11,4 +11,31 @@
     <button class="button primary" id="save-appeal" type="submit">保存复核</button>
     <p id="appeal-feedback" role="status" aria-live="polite" hidden></p>
   </form>
+  <form class="appeal-form revision-form" id="revision-form" hidden>
+    <label>柜位<select name="key" id="revision-key"></select></label>
+    <label>照片编号<input name="photo_id" id="revision-photo-id" maxlength="32" placeholder="如 P026"></label>
+    <label>补交照片<input name="file" id="revision-file" type="file" accept=".png,image/png"></label>
+    <label>拍摄时间<input name="captured" id="revision-captured" type="datetime-local" step="60"></label>
+    <label class="check"><input name="complete" id="revision-complete" type="checkbox" checked> 清点已完成</label>
+    <label>商品一<input name="sku1" maxlength="48" placeholder="商品编号"></label>
+    <label>排面<input name="facings1" type="number" min="1" max="999"></label>
+    <label>价签 · 元<input name="price1" type="number" min="0.01" max="100000" step="0.01"></label>
+    <label>商品二<input name="sku2" maxlength="48" placeholder="商品编号"></label>
+    <label>排面<input name="facings2" type="number" min="1" max="999"></label>
+    <label>价签 · 元<input name="price2" type="number" min="0.01" max="100000" step="0.01"></label>
+    <label>商品三<input name="sku3" maxlength="48" placeholder="商品编号"></label>
+    <label>排面<input name="facings3" type="number" min="1" max="999"></label>
+    <label>价签 · 元<input name="price3" type="number" min="0.01" max="100000" step="0.01"></label>
+    <label>经办人<input name="actor" id="revision-actor" maxlength="30" required></label>
+    <label class="appeal-note">补交说明<input name="note" id="revision-note" maxlength="160" required></label>
+    <button class="button primary" id="save-revision" type="submit">保存补交修订</button>
+    <p id="revision-feedback" role="status" aria-live="polite" hidden></p>
+  </form>
+  <form class="appeal-form" id="revert-form" hidden>
+    <label>修订序号<select name="number" id="revert-number"></select></label>
+    <label>经办人<input name="actor" id="revert-actor" maxlength="30" required></label>
+    <label class="appeal-note">恢复说明<input name="note" id="revert-note" maxlength="160" required></label>
+    <button class="button primary" id="save-revert" type="submit">恢复原批次</button>
+    <p id="revert-feedback" role="status" aria-live="polite" hidden></p>
+  </form>
 </section>

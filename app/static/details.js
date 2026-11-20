@@ -1,4 +1,4 @@
-import {element, flag, money, reason, outcomes, names} from './figures.js';
+import {element, flag, money, reason, outcomes, names, signed} from './figures.js';
 
 const raw = origin => origin?.raw.join(' | ');
 const source = origin => origin?.id;
@@ -115,6 +115,44 @@ function appeals(root, payload) {
     payload.events.map(row => [row.key, flag(row.status), row.actor, row.evidence_ref, row.note, row.created_at, row.original_rule, row.plan_source])));
 }
 
+function revisions(root, payload, runId) {
+  const ledger = payload.ledger;
+  if (runId && payload.count) {
+    const link = element('a', '↓ 下载修订证据包（财务）', 'button quiet revision-export');
+    link.href = `/api/revisions/${runId}/export`;
+    root.append(link);
+  }
+  group(root, '净罚额勾稽桥', table([['原批次罚额 · 元', 'num'], ['补交修订增减 · 元', 'num'], ['修订后罚额 · 元', 'num'],
+    ['异议减免 · 元', 'num'], ['净罚额 · 元', 'num'], ['勾稽']],
+    [[money(ledger.original_cents), signed(ledger.revision_delta_cents), money(ledger.revised_original_cents),
+      money(ledger.reduction_cents), money(ledger.net_cents), flag(ledger.balanced ? 'BALANCED' : 'PENDING')]]));
+  group(root, '结论变动柜位', table([['柜位'], ['原结论'], ['现结论'], ['现原因'], ['原罚额 · 元', 'num'],
+    ['现罚额 · 元', 'num'], ['差额 · 元', 'num'], ['修订', 'num']],
+    payload.rows.map(row => [row.key, flag(row.original.status), flag(row.current.status), reason(row.current.reason),
+      money(row.original.original_cents), money(row.current.original_cents),
+      signed(row.current.original_cents - row.original.original_cents), row.revision])));
+  group(root, '补交修订链', table([['序号', 'num'], ['状态'], ['经办人'], ['说明', 'clip'], ['UTC 时间'], ['柜位变动', 'clip'],
+    ['增减 · 元', 'num'], ['恢复记录', 'clip']],
+    payload.revisions.map(row => [row.revision, flag(row.status), row.actor,
+      row.status === 'FAILED' ? `${row.error.message}（${row.error.code}）` : row.note, row.created_at,
+      row.changes.map(change => `${change.key} ${names[change.before.status]}→${names[change.after.status]}`).join('；') || '—',
+      row.ledger ? signed(row.ledger.delta_cents) : '—',
+      row.revert ? `${row.revert.actor} · ${row.revert.created_at}` : '—'])));
+  const supplements = payload.revisions.flatMap(row => row.changes.map(change => ({revision: row.revision, change})))
+    .filter(entry => entry.change.supplement?.photo);
+  if (runId && supplements.length) {
+    group(root, '补交照片', table([['修订', 'num'], ['柜位'], ['照片'], ['SHA-256', 'clip'], ['处置']],
+      supplements.map(({revision, change}) => {
+        const photo = change.supplement.photo;
+        const link = element('a', photo.photo, 'image-link');
+        link.href = `/api/revisions/${runId}/${revision}/photos/${encodeURIComponent(photo.photo)}`;
+        link.target = '_blank';
+        link.rel = 'noopener';
+        return [revision, change.key, link, photo.sha256, change.supplement.issue ? reason(change.supplement.issue) : '已采信'];
+      })));
+  }
+}
+
 export function details(root, key, payload, options) {
   root.replaceChildren();
   if (!payload) {
@@ -123,5 +161,6 @@ export function details(root, key, payload, options) {
   }
   if (key === 'photos') photos(root, payload, options.dataset);
   else if (key === 'penalties') penalties(root, payload, options.filter);
+  else if (key === 'revisions') revisions(root, payload, options.run_id);
   else ({intake, plans, coverage, settlement, appeals})[key](root, payload);
 }
