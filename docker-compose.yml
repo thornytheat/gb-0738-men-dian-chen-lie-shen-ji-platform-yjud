@@ -1,0 +1,18 @@
+name: gb-0738-shelf-evidence
+services:
+  app:
+    build: .
+    ports:
+      - "${SHELF_PORT:-18427}:18427"
+    environment:
+      SHELF_DB_PATH: /var/lib/shelf-audit/audits.sqlite3
+    volumes:
+      - audit-data:/var/lib/shelf-audit
+    healthcheck:
+      test: ["CMD", "python", "-c", "from urllib.request import urlopen; urlopen('http://127.0.0.1:18427/health', timeout=2)"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+volumes:
+  audit-data:

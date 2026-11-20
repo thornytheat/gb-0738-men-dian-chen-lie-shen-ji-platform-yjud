@@ -1,0 +1,33 @@
+{
+  "code": "WINE-2611",
+  "version": "WINE-2611-B1",
+  "title": "冬藏酒水陈列 · 十一月",
+  "seed": "river-towns-202611-seed",
+  "start_utc": "2026-11-01T00:00:00Z",
+  "end_utc": "2026-12-01T00:00:00Z",
+  "sample_size": 18,
+  "max_photo_skew_min": 30,
+  "groups": [
+    {
+      "code": "CORE",
+      "title": "中心店",
+      "weight": 5
+    },
+    {
+      "code": "COMM",
+      "title": "社区店",
+      "weight": 3
+    },
+    {
+      "code": "RURAL",
+      "title": "近郊店",
+      "weight": 2
+    }
+  ],
+  "penalty_cents": {
+    "MISSING_SKU": 15000,
+    "WRONG_SKU": 9000,
+    "UNDER_FACINGS": 5500,
+    "PRICE_MISMATCH": 4000
+  }
+}

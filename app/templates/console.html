@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>门店陈列审计台</title>
+  <link rel="stylesheet" href="/assets/palette.css">
+  <link rel="stylesheet" href="/assets/dashboard.css">
+  <link rel="stylesheet" href="/assets/records.css">
+  <script type="module" src="/assets/console.js"></script>
+</head>
+<body>
+  <div class="dashboard">
+    <aside class="side">
+      <a href="#overview" class="identity"><span class="identity-mark" aria-hidden="true"><i></i><i></i><i></i></span><span><strong>零售稽核</strong><small>门店陈列</small></span></a>
+      <nav aria-label="稽核工作区">
+        <span class="nav-caption">巡检流程</span>
+        {% for key, title in sections.items() %}
+        <a href="#{{ key }}" data-panel="{{ key }}"><span aria-hidden="true"></span>{{ title }}</a>
+        {% endfor %}
+      </nav>
+      <a class="api-link" href="/docs">接口目录 ↗</a>
+    </aside>
+    <div class="working">
+      <header class="bar"><span class="crumb">酒水营运 <i aria-hidden="true">›</i> 陈列审计</span><a id="export" class="button quiet" aria-disabled="true"><span aria-hidden="true">↓</span> 导出证据</a></header>
+      <main id="overview">
+<div class="heading">
+  <div><p class="campaign" id="campaign">十一月酒水巡检</p><h1>门店陈列审计台</h1></div>
+  <span class="version" id="batch-stamp">未生成批次</span>
+</div>
+<form id="audit-form" class="run-controls">
+  <label>巡检档件<select id="dataset" name="dataset">{% for key, text in datasets.items() %}<option value="{{ key }}">{{ text }}</option>{% endfor %}</select></label>
+  <label>目标柜位<input id="sample-size" name="sample_size" type="number" min="1" max="100" value="18" required></label>
+  <button id="run" class="button primary" type="submit">运行审计 <span aria-hidden="true">→</span></button>
+  <p id="run-error" role="alert" class="feedback" hidden></p>
+</form>
+<div class="kpis" aria-label="抽检结论">
+  <div class="stat"><span>抽中柜位</span><strong id="stat-selected">—</strong><small>柜</small></div>
+  <div class="stat"><span>合规</span><strong id="stat-compliant">—</strong><small>柜</small></div>
+  <div class="stat"><span>违规</span><strong id="stat-violation">—</strong><small>柜</small></div>
+  <div class="stat"><span>待证</span><strong id="stat-pending">—</strong><small>柜</small></div>
+  <div class="stat"><span>隔离</span><strong id="stat-isolated">—</strong><small>柜</small></div>
+  <div class="stat net-stat"><span>净罚额</span><strong id="stat-net">—</strong><small>元</small></div>
+</div>
+        {% include 'quadrants.html' %}
+        {% include 'records.html' %}
+      </main>
+      <footer class="foot"><span id="run-feedback" role="status" aria-live="polite">待运行</span><span id="run-meta">{{ version }} · UTC+08:00</span></footer>
+    </div>
+  </div>
+  <script id="reason-map" type="application/json">{{ reasons | tojson }}</script>
+</body>
+</html>

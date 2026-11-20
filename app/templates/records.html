@@ -1,0 +1,14 @@
+<section class="panel detail" id="detail" aria-labelledby="detail-title" hidden>
+  <div class="panel-header"><h2 id="detail-title" tabindex="-1"></h2><button class="button quiet" type="button" id="clear-filter" hidden>清除柜位筛选</button></div>
+  <div class="detail-body" id="detail-body"></div>
+  <form class="appeal-form" id="appeal-form" hidden>
+    <label>柜位<select name="key" id="appeal-key"></select></label>
+    <label>动作<select name="action" id="appeal-action"></select></label>
+    <label>经办人<input name="actor" id="appeal-actor" maxlength="30" required></label>
+    <label>依据编号<input name="evidence_ref" id="appeal-evidence" maxlength="160" required></label>
+    <label id="reduction-field" hidden>减免分<input name="reduction_cents" id="appeal-reduction" type="number" min="1" step="1"></label>
+    <label class="appeal-note">复核说明<input name="note" id="appeal-note" maxlength="160" required></label>
+    <button class="button primary" id="save-appeal" type="submit">保存复核</button>
+    <p id="appeal-feedback" role="status" aria-live="polite" hidden></p>
+  </form>
+</section>
